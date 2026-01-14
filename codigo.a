@@ -1,0 +1,80 @@
+ORG 0000H
+      LJMP START
+
+START:
+      MOV R0,#00H      ; R0=0: Rodando | R0=1: Parado
+      CLR P1.0         ; Verde
+      CLR P1.1         ; Amarelo
+      CLR P1.2         ; Vermelho
+      CLR P1.3         ; LED Status Parado
+      SETB P1.4        ; LED Status Rodando
+      MOV SP,#60H      ; Inicializa Pilha
+
+MAIN_LOOP:
+      ACALL CHECK_PINS ; Varre botões P2.0 e P2.1
+      CJNE R0,#01H, CICLO_NORMAL
+      SJMP MAIN_LOOP
+
+CICLO_NORMAL:
+      ; --- VERDE ---
+      SETB P1.0
+      CLR P1.1
+      CLR P1.2
+      ACALL DELAY_LONG
+      
+      ; --- AMARELO ---
+      CLR P1.0
+      SETB P1.1
+      CLR P1.2
+      ACALL DELAY_SHORT
+      
+      ; --- VERMELHO ---
+      CLR P1.0
+      CLR P1.1
+      SETB P1.2
+      ACALL DELAY_LONG
+      
+      SJMP MAIN_LOOP
+
+CHECK_PINS:
+      JNB P2.0, SET_STOP    ; Se P2.0 = 0, para o sistema
+      JNB P2.1, SET_RUN     ; Se P2.1 = 0, retoma o sistema
+      RET
+
+SET_STOP:
+      MOV R0,#01H           
+      SETB P1.3             
+      CLR P1.4              
+      RET
+
+SET_RUN:
+      MOV R0,#00H           
+      SETB P1.4             
+      CLR P1.3              
+      RET
+
+DELAY_LONG:
+      MOV R2,#1EH
+D1:   ACALL BASE_DELAY
+      ACALL CHECK_PINS      
+      CJNE R0,#00H, EXIT_D  
+      DJNZ R2,D1
+      RET
+
+DELAY_SHORT:
+      MOV R2,#14H
+D2:   ACALL BASE_DELAY
+      ACALL CHECK_PINS
+      CJNE R0,#00H, EXIT_D
+      DJNZ R2,D2
+      RET
+
+BASE_DELAY:
+      MOV R1,#32H
+D3:   DJNZ R1,D3
+      RET
+
+EXIT_D:
+      RET
+
+      END
